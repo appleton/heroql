@@ -1,0 +1,11 @@
+{
+  "name": "heroql",
+  "version": "1.0.0",
+  "description": "A GraphQL layer on top of the Heroku API",
+  "main": "index.js",
+  "scripts": {
+    "test": "npm test"
+  },
+  "author": "Andrew Appleton",
+  "license": "ISC"
+}
