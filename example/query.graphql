@@ -1,0 +1,13 @@
+{
+  account {
+    id
+    name
+    created_at
+    updated_at
+  }
+  app(name: "my-great-app") {
+    id
+    name
+    created_at
+  }
+}

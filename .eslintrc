@@ -1,0 +1,32 @@
+{
+  "env": {
+    "node": true,
+    "es6": true
+  },
+
+  "ecmaFeatures": {
+    "arrowFunctions": true,
+    "templateStrings": true,
+    "blockBindings": true,
+    "classes": true,
+    "objectLiteralComputedProperties": true,
+    "objectLiteralShorthandMethods": true,
+    "objectLiteralShorthandProperties": true,
+    "restParams": true,
+    "spread": true,
+    "generators": true
+  },
+
+  "globals": {
+  },
+
+  "rules": {
+    "quotes": [2, "single", "avoid-escape"],
+    "strict": 0,
+    "semi": [2, "always"],
+    "no-comma-dangle": 0,
+    "no-underscore-dangle": 0,
+    "no-use-before-define" : 0,
+    "no-unused-vars": 1
+  }
+}

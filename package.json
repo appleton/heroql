@@ -4,8 +4,21 @@
   "description": "A GraphQL layer on top of the Heroku API",
   "main": "index.js",
   "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
     "test": "npm test"
   },
   "author": "Andrew Appleton",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.14.0",
+    "express": "^4.13.3",
+    "express-bearer-token": "^2.1.0",
+    "graphql": "^0.4.4",
+    "heroku-client": "^2.2.2"
+  },
+  "devDependencies": {
+    "eslint": "^1.5.1",
+    "nodemon": "^1.7.1"
+  }
 }
