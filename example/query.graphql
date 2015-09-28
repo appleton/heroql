@@ -1,13 +1,13 @@
 {
-  account {
+  app(name: "pliny-todos") {
     id
     name
     created_at
-    updated_at
-  }
-  app(name: "my-great-app") {
-    id
-    name
-    created_at
+    releases {
+      id
+      created_at
+      version
+      description
+    }
   }
 }

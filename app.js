@@ -8,6 +8,7 @@ const hkSchema   = require('./schema/heroku.json');
 const graphql           = GraphQL.graphql;
 const GraphQLSchema     = GraphQL.GraphQLSchema;
 const GraphQLObjectType = GraphQL.GraphQLObjectType;
+const GraphQLList       = GraphQL.GraphQLList;
 const GraphQLString     = GraphQL.GraphQLString;
 const GraphQLInt        = GraphQL.GraphQLInt;
 const GraphQLBoolean    = GraphQL.GraphQLBoolean;
@@ -21,7 +22,7 @@ const typeMap = {
   boolean: GraphQLBoolean
 };
 
-const types = Object.keys(hkSchema.definitions).reduce((memo, key) => {
+const types = Object.keys(hkSchema.definitions).reverse().reduce((memo, key) => {
   const definition = hkSchema.definitions[key];
   if (key.indexOf('-' !== -1)) key = key.replace(/\-/g, '_');
 
@@ -29,22 +30,32 @@ const types = Object.keys(hkSchema.definitions).reduce((memo, key) => {
     name: key,
     description: definition.description,
     fields: () => {
-      return Object.keys(definition.definitions).reduce((memo, subKey) => {
-        if (subKey === 'identity') return memo;
+      return Object.keys(definition.definitions).reduce((subMemo, subKey) => {
+        if (subKey === 'identity') return subMemo;
 
         const subDefinition = definition.definitions[subKey];
         const type = typeMap[subDefinition.type[0]];
-        if (type == null) return memo;
+        if (type == null) return subMemo;
 
-        memo[subKey] = {
+        subMemo[subKey] = {
           type:        type,
           description: subDefinition.description
         };
 
-        return memo;
+        if (key === 'app' && subMemo.releases == null) {
+          subMemo.releases = {
+            type: new GraphQLList(memo.release),
+            description: 'Some relases',
+            resolve(app) {
+              return app.__client.apps(app.id).releases().list();
+            }
+          };
+        }
+        return subMemo;
       }, {});
     }
   });
+
 
   return memo;
 }, {});
@@ -79,8 +90,19 @@ const queryType = new GraphQLObjectType({
           }
         },
         resolve: (heroku, params) => {
-          return heroku.apps(params.id || params.name).info();
+          return heroku.apps(params.id || params.name).info().then((app) => {
+            // TODO: this is the worst. How to pass context to sub-resources
+            app.__client = heroku;
+            return app;
+          });
         },
+
+        fields: {
+          releases: {
+            type: new GraphQLList(types.release),
+            description: 'App releases',
+          }
+        }
       }
     };
   }
@@ -89,7 +111,7 @@ const queryType = new GraphQLObjectType({
 const schema = new GraphQLSchema({ query: queryType });
 
 app.post('/query', token(), bodyParser.text({ type: '*/*' }), function(req, res) {
-  const heroku = new Heroku({ token: req.token });
+  const heroku = new Heroku({ token: req.token, debug: true });
   const query = req.body;
 
   graphql(schema, query, heroku).then((data) => {
