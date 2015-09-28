@@ -3,87 +3,40 @@ const bodyParser = require('body-parser');
 const GraphQL    = require('graphql');
 const Heroku     = require('heroku-client');
 const token      = require('express-bearer-token');
+const changeCase = require('change-case');
 const hkSchema   = require('./schema/heroku.json');
+
+const typeBuilder = require('./lib/type-builder');
+const linkBuilder = require('./lib/link-builder');
 
 const graphql           = GraphQL.graphql;
 const GraphQLSchema     = GraphQL.GraphQLSchema;
 const GraphQLObjectType = GraphQL.GraphQLObjectType;
-const GraphQLString     = GraphQL.GraphQLString;
-const GraphQLInt        = GraphQL.GraphQLInt;
-const GraphQLBoolean    = GraphQL.GraphQLBoolean;
 
 const app = express();
 
-const typeMap = {
-  object:  GraphQLObjectType,
-  string:  GraphQLString,
-  integer: GraphQLInt,
-  boolean: GraphQLBoolean
-};
-
 const types = Object.keys(hkSchema.definitions).reduce((memo, key) => {
-  const definition = hkSchema.definitions[key];
-  if (key.indexOf('-' !== -1)) key = key.replace(/\-/g, '_');
-
-  memo[key] = new GraphQLObjectType({
-    name: key,
-    description: definition.description,
-    fields: () => {
-      return Object.keys(definition.definitions).reduce((memo, subKey) => {
-        if (subKey === 'identity') return memo;
-
-        const subDefinition = definition.definitions[subKey];
-        const type = typeMap[subDefinition.type[0]];
-        if (type == null) return memo;
-
-        memo[subKey] = {
-          type:        type,
-          description: subDefinition.description
-        };
-
-        return memo;
-      }, {});
-    }
-  });
-
+  const type = typeBuilder(hkSchema, key);
+  if (type) memo[changeCase.pascalCase(key)] = type;
   return memo;
 }, {});
 
+const links = Object.keys(types).reduce((memo, key) => {
+  const type = types[key];
+  const link = linkBuilder(hkSchema, type);
+  if (link) memo[key] = link;
+  return memo;
+}, {});
+
+delete links.BuildResult;
+delete links.ConfigVar;
+delete links.OrganizationAppCollaborator;
+delete links.SmsNumber;
+delete links.UserPreferences;
+
 const queryType = new GraphQLObjectType({
   name: 'Query',
-  fields: () => {
-    // TODO: this should also be generated from the schema
-    return {
-      account: {
-        type: types.account,
-        args: {
-          id: {
-            description: 'Unique identifier',
-            type: GraphQLString
-          }
-        },
-        resolve: (heroku) => {
-          return heroku.account().info();
-        },
-      },
-      app: {
-        type: types.app,
-        args: {
-          id: {
-            description: 'App ID',
-            type: GraphQLString
-          },
-          name: {
-            description: 'App name',
-            type: GraphQLString
-          }
-        },
-        resolve: (heroku, params) => {
-          return heroku.apps(params.id || params.name).info();
-        },
-      }
-    };
-  }
+  fields: () => links
 });
 
 const schema = new GraphQLSchema({ query: queryType });

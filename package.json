@@ -15,10 +15,13 @@
   "license": "ISC",
   "dependencies": {
     "body-parser": "^1.14.0",
+    "change-case": "^2.3.0",
     "express": "^4.13.3",
     "express-bearer-token": "^2.1.0",
     "graphql": "^0.4.4",
-    "heroku-client": "^2.2.2"
+    "heroku-client": "^2.2.2",
+    "jsonpointer": "^2.0.0",
+    "request": "^2.64.0"
   },
   "devDependencies": {
     "eslint": "^1.5.1",
